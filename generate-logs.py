@@ -5,10 +5,19 @@ users = ["John", "Jane", "Bob"]
 ips = ["198.51.100.7", "198.51.100.12", "198.51.100.23"]
 start = datetime(2026,10,12,8,0,0)
 
+lines = []
+
 for i in range(10):
     user = random.choice(users)
     ip = random.choice(ips)
-    seconds = random.randint(0,36000)
+    seconds = random.randint(0, 36000)
     when = start + timedelta(seconds=seconds)
     stamp = when.strftime("%b %d %H:%M:%S")
-    print(stamp + " server sshd[1234]: Accepted password for " + user + " from " + ip + " port 40022 ssh2")
+    line = stamp + " server sshd[" + str(random.randint(1000, 9999)) + "]: Accepted password for " + user + " from " + ip + " port " + str(random.randint(40000, 60000)) + " ssh2"
+    lines.append((when, line))
+
+lines.sort()
+
+with open("auth.log", "w") as f:
+    for when, line in lines:
+        f.write(line + "\n")
