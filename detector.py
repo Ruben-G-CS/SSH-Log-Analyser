@@ -25,7 +25,23 @@ def detect_brute_force(groups, threshold=20, window_seconds=120):
                 break
     return flagged
 
+def detect_compromise(groups, threshold=20, window_seconds=120):
+    brute = detect_brute_force(groups, threshold, window_seconds)
+    flagged = []
+    for ip in brute:
+        last_fail = None
+        for e in groups[ip]:
+            if e["status"] == "failed":
+                if last_fail is None or e["time"] > last_fail:
+                    last_fail = e["time"]
+        for e in groups[ip]:
+            if e["status"] == "accepted" and e["time"] > last_fail:
+                flagged.append(ip)
+                break
+    return flagged
+
 if __name__ == "__main__":
     events, skipped = parse_file("auth.log")
     groups = group_by_ip(events)
     print("brute force:", detect_brute_force(groups))
+    print("Compromise:", detect_compromise(groups))
