@@ -2,6 +2,8 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import base64
+from detector import detect_brute_force, detect_compromise, detect_enumeration
 
 
 from parser import parse_file
@@ -74,6 +76,34 @@ def chart_anomaly_scores(groups, filename="anomaly_scores.png"):
     plt.savefig(filename)
     plt.close()
 
+def embed(filename):
+    with open(filename, "rb") as f:
+        data = base64.b64encode(f.read()).decode()
+    return '<img src="data:image/png;base64,' + data + '" style="max-width:100%">'
+
+
+def write_html(groups, total_events, filename="report.html"):
+    brute = detect_brute_force(groups)
+    comp = detect_compromise(groups)
+    enum = detect_enumeration(groups)
+
+    html = "<html><head><title>SSH Log Report</title></head>"
+    html += "<body style='font-family:sans-serif;max-width:900px;margin:auto'>"
+    html += "<h1>SSH Log Analysis Report</h1>"
+    html += "<p>Events parsed: " + str(total_events) + " from " + str(len(groups)) + " IPs.</p>"
+    html += "<h2>Rule-based detections</h2><ul>"
+    html += "<li><b>Brute force:</b> " + ", ".join(brute) + "</li>"
+    html += "<li><b>Possible compromise:</b> " + ", ".join(comp) + "</li>"
+    html += "<li><b>Username enumeration:</b> " + ", ".join(enum) + "</li>"
+    html += "</ul>"
+    html += "<h2>Failed logins per IP</h2>" + embed("failures_per_ip.png")
+    html += "<h2>Failed logins over time</h2>" + embed("failures_over_time.png")
+    html += "<h2>Anomaly scores</h2>" + embed("anomaly_scores.png")
+    html += "</body></html>"
+
+    with open(filename, "w") as f:
+        f.write(html)
+
 if __name__ == "__main__":
     events, skipped = parse_file("auth.log")
     groups = group_by_ip(events)
@@ -83,3 +113,5 @@ if __name__ == "__main__":
     print("saved failures_over_time.png")
     chart_anomaly_scores(groups)
     print("saved anomaly_scores.png")
+    write_html(groups, len(events))
+    print("saved report.html")
