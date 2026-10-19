@@ -40,8 +40,20 @@ def detect_compromise(groups, threshold=20, window_seconds=120):
                 break
     return flagged
 
+def detect_enumeration(groups, min_users=10):
+    flagged = []
+    for ip in groups:
+        names = set()
+        for e in groups[ip]:
+            if e["status"] == "failed":
+                names.add(e["user"])
+        if len(names) >= min_users:
+            flagged.append(ip)
+    return flagged
+
 if __name__ == "__main__":
     events, skipped = parse_file("auth.log")
     groups = group_by_ip(events)
     print("brute force:", detect_brute_force(groups))
     print("Compromise:", detect_compromise(groups))
+    print("Enumeration:", detect_enumeration(groups))
