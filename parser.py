@@ -1,4 +1,5 @@
 import re
+from datetime import datetime
 
 pattern = r"^(\w{3} +\d+ \d{2}:\d{2}:\d{2}) .*?(Failed|Accepted) password for (invalid user )?(\w+) from (\S+) port (\d+)"
 
@@ -7,8 +8,9 @@ def parse_line(line):
     match = re.search(pattern, line)
     if match is None:
         return None
+    when = datetime.strptime("2026 " + match.group(1), "%Y %b %d %H:%M:%S")
     return {
-        "time": match.group(1),
+        "time": when,
         "status": match.group(2).lower(),
         "invalid": match.group(3) is not None,
         "user": match.group(4),
@@ -44,3 +46,4 @@ if __name__ == "__main__":
     print("failed:", failed)
     print("accepted:", accepted)
     print(events[0])
+    print(events[-1]["time"] - events[0]["time"])
